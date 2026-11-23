@@ -43,6 +43,10 @@ Training points spent automatically at the start of a dungeon:
 
 Run `python tests/run.py --haxe PATH_TO_HAXE` for the offline tests. They use test doubles for the game and do not run the native game.
 
+## Credits
+
+Thanks to [XξИӦĜεй三尺Šĭ乌](https://github.com/Xenogenersis/) for the idea.
+
 ## License
 
 Code is GPL-3.0; see [LICENSE](LICENSE).
