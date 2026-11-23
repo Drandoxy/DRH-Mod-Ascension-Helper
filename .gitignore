@@ -1,0 +1,5 @@
+*.zip
+/verification.json
+/data/
+__pycache__/
+*.pyc
