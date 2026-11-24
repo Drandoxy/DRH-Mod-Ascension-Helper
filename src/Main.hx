@@ -42,6 +42,7 @@ class Main extends mods.api.Mod {
 
 	override public function init(context:Context):Void {
 		ctx = context;
+		ErrorLog.reset(function(message) context.log(message));
 		native = new Native(ctx);
 		enabled = ctx.settings.flag("autoEquip", "Automatic equipment", "Equip saved weapons when their level is reached.", true);
 		autoTrain = ctx.settings.flag("autoTrain", "Automatic training", "Spend training points by each hero's saved plan.", true);
@@ -302,5 +303,6 @@ class Main extends mods.api.Mod {
 			ctx.overlay.removeEventListener(Event.ENTER_FRAME, frame);
 		if (toast != null)
 			toast.dispose();
+		ErrorLog.reset();
 	}
 }

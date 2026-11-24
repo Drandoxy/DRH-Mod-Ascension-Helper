@@ -15,6 +15,7 @@ import openfl.text.TextField;
 @:access(mods.ascension_helper.PlanList)
 @:access(mods.ascension_helper.NativeUI)
 @:access(mods.ascension_helper.Main)
+@:access(mods.ascension_helper.Store)
 @:access(mods.ascension_helper.StorageOverlays)
 @:access(mods.ascension_helper.DragHold)
 @:access(mods.ascension_helper.CardVisual)
@@ -122,6 +123,27 @@ class Checks {
 		Reflect.setField(info, "id", 1);
 		facade.dbAccountInfo.inventoryInfo.items.rows = [info];
 		var context = new mods.api.Context(dir, facade);
+		var logged:Array<String> = [];
+		mods.ascension_helper.ErrorLog.reset(function(message) logged.push(message));
+		for (i in 0...5)
+			mods.ascension_helper.ErrorLog.report("Repeated failure", "boom");
+		check(logged.length == 3 && logged[0] == "Repeated failure: boom" && logged[2].indexOf("hidden") > 0,
+			"error reports are not limited to three per place");
+		var brokenDir = dir + "-broken";
+		sys.FileSystem.createDirectory(brokenDir);
+		var broken = new Store(brokenDir, "42");
+		logged = [];
+		mods.ascension_helper.ErrorLog.reset(function(message) logged.push(message));
+		new Store(brokenDir, "42");
+		check(logged.length == 0, "a missing plan file was reported as an error");
+		sys.io.File.saveContent(broken.path(0), "{not json");
+		new Store(brokenDir, "42");
+		check(logged.length == 1 && logged[0].indexOf("unreadable weapon plan file (copy 1)") >= 0 && logged[0].indexOf(brokenDir) < 0,
+			"an unreadable plan file was not reported, or the report shows the file path");
+		mods.ascension_helper.ErrorLog.reset();
+		for (name in sys.FileSystem.readDirectory(brokenDir))
+			sys.FileSystem.deleteFile(brokenDir + "/" + name);
+		sys.FileSystem.deleteDirectory(brokenDir);
 		var native = new Native(context);
 		check(native.list(facade.dbAccountInfo.activeAvatarInfo).length == 1, "native inventory snapshot");
 		var root = new MovieClip();
@@ -190,6 +212,17 @@ class Checks {
 			"normal Storage weapon is missing modifiers or level badge");
 		normalStrip.root.getChildAt(0).dispatchEvent(new openfl.events.MouseEvent(openfl.events.MouseEvent.CLICK));
 		check(normalPicked, "normal Storage modifier click did not invoke native weapon selection");
+		// Weapon Modifiers in Inventory Preview draws levels and modifier icons itself: leave them to it.
+		context.active = [mods.ascension_helper.CardVisual.WEAPON_MODIFIERS_MOD];
+		editor.tick(state);
+		check(editor.storageOverlays.views[0] != null && editor.storageOverlays.strips[0] == null && editor.storageOverlays.badges[0] == null,
+			"levels or modifier icons drawn while Weapon Modifiers in Inventory Preview runs");
+		context.active = [];
+		editor.tick(state);
+		check(editor.storageOverlays.strips[0] != null && editor.storageOverlays.strips[0].root.numChildren == 1
+			&& editor.storageOverlays.badges[0] != null,
+			"levels and modifier icons did not come back after Weapon Modifiers in Inventory Preview stopped");
+		normalStrip = editor.storageOverlays.strips[0];
 		inventory.mSelectedItemInfo = info;
 		inventory.mItems[0].mSelectedEffect.visible = true;
 		editor.tick(state);
@@ -304,6 +337,14 @@ class Checks {
 			new openfl.geom.Rectangle(sharedBounds.x + sharedBounds.width * 0.76, sharedBounds.y + 0.5 - sharedBounds.height * 0.44 * 0.45,
 				sharedBounds.width * 0.44, sharedBounds.height * 0.44));
 		check(editor.stars[0].scaleX == expectedBadge.scaleX, "planner badge does not use shared card geometry");
+		context.active = [mods.ascension_helper.CardVisual.WEAPON_MODIFIERS_MOD];
+		editor.render();
+		check(editor.cardViews[0] != null && editor.stars[0] == null && editor.tileModifiers[0] == null,
+			"planner draws levels or modifier icons while Weapon Modifiers in Inventory Preview runs");
+		context.active = [];
+		editor.render();
+		check(editor.stars[0] != null && editor.stars[0].scaleX == expectedBadge.scaleX && editor.tileModifiers[0] != null,
+			"planner levels and modifier icons did not come back");
 		editor.cells[0].root.dispatchEvent(new openfl.events.MouseEvent("rollOver"));
 		check(editor.cardViews[0].style.outline.visible && editor.cardViews[0].style.hovered, "planner hover outline did not appear");
 		editor.cells[0].root.dispatchEvent(new openfl.events.MouseEvent("rollOut"));

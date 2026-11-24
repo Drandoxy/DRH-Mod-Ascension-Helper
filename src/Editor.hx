@@ -191,8 +191,9 @@ class Editor {
 				targets.push(cell);
 			}
 			Navigator.link(targets);
-		} catch (_:Dynamic) {
+		} catch (error:Dynamic) {
 			// Controller navigation is optional; mouse use is unaffected.
+			ErrorLog.report("Could not link the planner for the controller", error);
 		}
 	}
 
@@ -211,7 +212,7 @@ class Editor {
 			return;
 		}
 		ui = new NativeUI(asset, native.facade());
-		storageOverlays = new StorageOverlays(ui, native, grid, inv);
+		storageOverlays = new StorageOverlays(ui, native, grid, inv, function() return showCardDetails());
 		var card = NativeUI.clipChild(root, "item_card");
 		var background = NativeUI.child(card, "bg");
 		stableCardBounds = background == null ? (card == null ? null : card.getBounds(root)) : background.getBounds(root);
@@ -882,7 +883,8 @@ class Editor {
 			cell.draggable = false;
 			cell.equippable = 1;
 			var view = cardViews[i];
-			if (view != null && view.key != CardVisual.signature(info)) {
+			var details = showCardDetails();
+			if (view != null && view.key != CardVisual.keyFor(info, details)) {
 				view.dispose();
 				view = null;
 			}
@@ -899,7 +901,7 @@ class Editor {
 					var item:account.ItemInfo = cast boundCell.info;
 					var planned = Plan.selected(draft, slot, cast item.requiredLevel);
 					return planned != null && planned.uid == Std.string(item.databaseId);
-				});
+				}, details);
 			}
 			cardViews[i] = view;
 			if (view != null) {
@@ -915,6 +917,11 @@ class Editor {
 			pageLabel.x = pageCenter - pageLabel.width / 2;
 			pageLabel.y = pageMiddle - pageLabel.height / 2;
 		}
+	}
+
+	/** Levels and modifier icons on cards, unless Weapon Modifiers in Inventory Preview already draws them. */
+	function showCardDetails():Bool {
+		return !ctx.isActive(CardVisual.WEAPON_MODIFIERS_MOD);
 	}
 
 	function persist(next:Array<Plan>):Void {

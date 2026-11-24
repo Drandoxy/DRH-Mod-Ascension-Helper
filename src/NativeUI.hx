@@ -31,7 +31,9 @@ class NativeUI {
 		try {
 			var template = clip("avatar_tooltip");
 			original = cast child(template, "level_star_label");
-		} catch (_:Dynamic) {}
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not read the game's level font, using a plain font", error);
+		}
 		fontName = original == null ? "_sans" : original.defaultTextFormat.font;
 		embedded = original != null && original.embedFonts;
 	}
@@ -223,7 +225,9 @@ class NativeUI {
 		try {
 			if (target != null)
 				facade.menuNavigationController.setFocusedUiObject(target);
-		} catch (_:Dynamic) {}
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not move controller focus", error);
+		}
 	}
 
 	public static function setLevel(group:Sprite, value:String):Void {

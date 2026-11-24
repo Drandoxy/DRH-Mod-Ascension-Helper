@@ -74,6 +74,14 @@ class CardVisual {
 		g.lineTo(x + c, y);
 	}
 
+	/** Id of Weapon Modifiers in Inventory Preview, which draws its own levels and modifier icons on these cards. */
+	public static inline var WEAPON_MODIFIERS_MOD = "weapon_modifiers_in_inventory_preview";
+
+	/** Card key: the weapon, and whether this mod draws its levels and modifier icons. */
+	public static function keyFor(item:account.InventoryBaseInfo, details:Bool):String {
+		return signature(item) + (details ? "" : ":plain");
+	}
+
 	public static function signature(item:account.InventoryBaseInfo):String {
 		if (item == null)
 			return "";
@@ -84,10 +92,10 @@ class CardVisual {
 	}
 
 	public function new(ui:NativeUI, native:Native, cell:UIInventoryItem, gear:uI.equipPicker.AvatarEquipElement, inventory:UIInventory, select:String->Void,
-			?selected:Void->Bool) {
+			?selected:Void->Bool, details:Bool = true) {
 		owner = cell != null ? cell.root : gear.root;
 		var raw = cell != null ? cell.info : gear.itemInfo;
-		key = signature(raw);
+		key = keyFor(raw, details);
 		var icon:MovieClip = cell != null ? cast Reflect.field(cell, "mIcon") : cast Reflect.field(gear, "mIcon");
 		var bounds = StorageOverlays.iconBounds(icon, owner);
 		if (gear != null) {
@@ -126,7 +134,8 @@ class CardVisual {
 		host = new Sprite();
 		host.name = "ascensionWeaponDetails";
 		owner.addChild(host);
-		if (Std.isOfType(raw, ItemInfo)) {
+		// While Weapon Modifiers in Inventory Preview runs, levels and modifier icons are left to it.
+		if (details && Std.isOfType(raw, ItemInfo)) {
 			var weapon:ItemInfo = cast raw;
 			if (weapon.gmWeaponItem != null) {
 				// Equipped slots show only the weapon tooltip; their modifier icons have no pop-up of their own.

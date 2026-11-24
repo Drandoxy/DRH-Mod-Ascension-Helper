@@ -13,7 +13,7 @@ Plan each hero's weapons and training once. As the hero levels up, the mod equip
 
 **Settings > Mods:** **Automatic equipment** and **Automatic training** (both on by default) turn the automatic parts off while keeping your plans.
 
-**Not compatible with Weapon Modifiers in Inventory Preview:** both mods draw weapon levels and modifier icons on the same inventory cards. Ascension Helper uses its own display for these, so enable only one of the two.
+**With Weapon Modifiers in Inventory Preview:** both mods can run together. While that mod is turned on, it draws the weapon levels and modifier icons on inventory cards, and Ascension Helper's own levels and star-level modifier icons are not shown. To get Ascension Helper's inventory look, turn Weapon Modifiers in Inventory Preview off.
 
 Plans are stored only in this mod's local data folder, per account and hero. Nothing is uploaded. Game artwork and fonts are loaded from the installed game and are not included.
 <!-- /drh:show -->
@@ -38,6 +38,11 @@ Training points spent automatically at the start of a dungeon:
 - Equipment and training requests can be sent during a dungeon. The account is updated at once; whether the current run uses the change right away is decided by the game server.
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
+
+## Changes since 0.1.46
+
+- No longer incompatible with Weapon Modifiers in Inventory Preview: while that mod runs, Ascension Helper leaves the levels and modifier icons on inventory cards to it and keeps everything else.
+- Errors the mod recovers from, such as an unreadable plan file or a failed controller link, are now written to the game log (at most three times each) instead of being ignored.
 
 ## Development
 

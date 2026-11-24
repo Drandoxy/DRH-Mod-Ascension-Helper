@@ -13,7 +13,10 @@ class StatStore {
 		this.account = account;
 		if (!sys.FileSystem.exists(folder))
 			sys.FileSystem.createDirectory(folder);
-		for (i in 0...2)
+		for (i in 0...2) {
+			// The second file is the backup copy; a missing one is normal.
+			if (!sys.FileSystem.exists(path(i)))
+				continue;
 			try {
 				var d:Dynamic = haxe.Json.parse(sys.io.File.getContent(path(i)));
 				if (d.schema != 1 || d.account != account || !Std.isOfType(d.sequence, Int) || d.sequence <= sequence || !Std.isOfType(d.heroes, Array))
@@ -32,7 +35,10 @@ class StatStore {
 				sequence = d.sequence;
 				ids = nextIds;
 				plans = nextPlans;
-			} catch (_:Dynamic) {}
+			} catch (error:Dynamic) {
+				ErrorLog.report("Skipped an unreadable training plan file (copy " + (i + 1) + ")", error);
+			}
+		}
 	}
 
 	function path(slot:Int):String

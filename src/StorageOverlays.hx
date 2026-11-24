@@ -28,8 +28,10 @@ class StorageOverlays {
 	var styles:Array<CardStyle> = [];
 	var views:Array<CardVisual> = [];
 	var refreshQueued = false;
+	var details:Void->Bool;
 
-	public function new(ui:NativeUI, native:Native, grid:MovieClip, inventory:UIInventory) {
+	public function new(ui:NativeUI, native:Native, grid:MovieClip, inventory:UIInventory, details:Void->Bool) {
+		this.details = details;
 		this.ui = ui;
 		this.native = native;
 		this.inventory = inventory;
@@ -72,6 +74,7 @@ class StorageOverlays {
 		if (equipped != null && gearDrags.length == 0)
 			for (gear in equipped)
 				gearDrags.push(new DragHold(null, gear));
+		var showDetails = details();
 		for (i in 0...18) {
 			var cell = i < 15 && i < current.length ? current[i] : null;
 			var gear = i >= 15 && equipped != null && i - 15 < equipped.length ? equipped[i - 15] : null;
@@ -82,7 +85,7 @@ class StorageOverlays {
 				item = null;
 			var icon:MovieClip = cell != null ? cast Reflect.field(cell, "mIcon") : gear != null ? cast Reflect.field(gear, "mIcon") : null;
 
-			var key = CardVisual.signature(raw);
+			var key = CardVisual.keyFor(raw, showDetails);
 			if (key == keys[i] && owner == owners[i]) {
 				if (views[i] != null)
 					views[i].refresh();
@@ -100,7 +103,7 @@ class StorageOverlays {
 					selectedCell.onSelected(false);
 				if (selectedGear != null && selectedGear.itemInfo != null && Std.string(selectedGear.itemInfo.databaseId) == uid)
 					selectedGear.onSelected(false);
-			});
+			}, null, showDetails);
 			views[i] = view;
 			hosts[i] = view.host;
 			styles[i] = view.style;

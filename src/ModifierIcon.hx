@@ -122,7 +122,8 @@ class ModifierIcon {
 			if (drawn == null || drawn.width <= 0 || drawn.height <= 0)
 				return null;
 			return new Rectangle(drawn.x / scale, drawn.y / scale, drawn.width / scale, drawn.height / scale);
-		} catch (_:Dynamic) {
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not measure a modifier icon", error);
 			return null;
 		}
 	}

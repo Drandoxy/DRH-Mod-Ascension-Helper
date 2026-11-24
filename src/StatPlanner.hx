@@ -154,7 +154,9 @@ class StatPlanner {
 		try {
 			if (Reflect.field(training, "mPendingDBWrite") == true)
 				Reflect.callMethod(training, Reflect.field(training, "writeStatsToDatabase"), []);
-		} catch (_:Dynamic) {}
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not save hand-clicked training points first", error);
+		}
 		editing = true;
 		load(id);
 		if (uiRoot.stage != null) {
@@ -173,8 +175,10 @@ class StatPlanner {
 		heroId = id;
 		try
 			list = store().get(id)
-		catch (_:Dynamic)
+		catch (error:Dynamic) {
 			list = [];
+			ErrorLog.report("Could not load the training plan", error);
+		}
 	}
 
 	function saveCurrent():Void {
@@ -301,7 +305,9 @@ class StatPlanner {
 			targets.push(b);
 		try
 			Navigator.link(targets)
-		catch (_:Dynamic) {}
+		catch (error:Dynamic) {
+			ErrorLog.report("Could not link the training buttons for the controller", error);
+		}
 	}
 
 	function hide(node:DisplayObject):Void {
@@ -342,7 +348,9 @@ class StatPlanner {
 		// Back to the game's own stat values for the selected hero.
 		try
 			Reflect.callMethod(training, Reflect.field(training, "updateUIFromDB"), [])
-		catch (_:Dynamic) {}
+		catch (error:Dynamic) {
+			ErrorLog.report("Could not restore the game's training values", error);
+		}
 		if (entry != null) {
 			entry.visible = true;
 			ui.focus(entry);

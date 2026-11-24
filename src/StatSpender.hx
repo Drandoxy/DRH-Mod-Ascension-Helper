@@ -115,7 +115,9 @@ class StatSpender {
 		try {
 			var constant:String = cast Reflect.field(a.gmHero, "StatUpgrade" + (index + 1));
 			text = facade.GameMasterLocale.getGameMasterSubString("STATS_NAME", constant);
-		} catch (_:Dynamic) {}
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not read a stat name", error);
+		}
 		if (text == null || text == "")
 			text = ["Stat 1", "Stat 2", "Stat 3", "Stat 4"][index];
 		return titleCase(text);
@@ -139,7 +141,9 @@ class StatSpender {
 			refreshAt = now + 10;
 			try
 				native.facade().dbAccountInfo.getUsersFullAccountInfo()
-			catch (_:Dynamic) {}
+			catch (error:Dynamic) {
+				ErrorLog.report("Could not refresh account info after a level-up", error);
+			}
 		}
 		lastHero = hero;
 		lastLevel = level;
