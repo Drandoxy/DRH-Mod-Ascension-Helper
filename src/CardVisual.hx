@@ -193,18 +193,37 @@ class CardVisual {
 	}
 
 	public function dispose():Void {
-		if (baseFrame != null && baseFrame.parent != null)
-			baseFrame.parent.removeChild(baseFrame);
-		if (nativeFrame != null)
-			nativeFrame.visible = frameVisible;
-		if (graphic != null)
-			graphic.mask = oldMask;
-		if (clip != null && clip.parent != null)
-			clip.parent.removeChild(clip);
-		if (strip != null)
-			strip.dispose();
-		style.dispose();
-		if (host.parent != null)
-			host.parent.removeChild(host);
+		safely(function() {
+			if (baseFrame != null && baseFrame.parent != null)
+				baseFrame.parent.removeChild(baseFrame);
+		});
+		safely(function() {
+			if (nativeFrame != null)
+				nativeFrame.visible = frameVisible;
+		});
+		safely(function() {
+			if (graphic != null)
+				graphic.mask = oldMask;
+		});
+		safely(function() {
+			if (clip != null && clip.parent != null)
+				clip.parent.removeChild(clip);
+		});
+		safely(function() {
+			if (strip != null)
+				strip.dispose();
+		});
+		safely(function() style.dispose());
+		safely(function() {
+			if (host.parent != null)
+				host.parent.removeChild(host);
+		});
+	}
+
+	static function safely(step:Void->Void):Void {
+		try
+			step()
+		catch (error:Dynamic)
+			ErrorLog.report("Could not restore part of an old card", error);
 	}
 }

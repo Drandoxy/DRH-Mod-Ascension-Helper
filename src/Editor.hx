@@ -245,25 +245,34 @@ class Editor {
 			notify("Select an owned hero first.", false);
 			return;
 		}
+		var step = "plan cleanup";
 		try {
+			// First, before touching any native card: a sold weapon leaves the plan.
+			dropMissingWeapons(Std.string(a.id));
 			editing = true;
+			step = "storage overlays";
 			storageOverlays.update(false);
 			entry.visible = false;
+			step = "hero";
 			beginHero(a);
+			step = "layout";
 			build();
 			maintain();
+			step = "weapon list";
 			rebuild();
+			step = "slot";
 			selectSlot(initialSlot());
 			dirty = false;
+			step = "controller";
 			linkController();
 			if (slot < slotButtons.length)
 				ui.focus(slotButtons[slot]);
 		} catch (error:Dynamic) {
 			editing = false;
 			cleanup();
-			// Shown instead of silently doing nothing when the planner cannot open.
-			ErrorLog.report("Could not open the weapon planner", error);
-			notify("Could not open the weapon planner: " + Std.string(error), false);
+			// Shown instead of silently doing nothing when the planner cannot open; the step helps a report.
+			ErrorLog.report("Could not open the weapon planner (" + step + ")", error);
+			notify("Could not open the weapon planner (" + step + "): " + Std.string(error), false);
 		}
 	}
 
@@ -294,7 +303,6 @@ class Editor {
 	function beginHero(a:AvatarInfo):Void {
 		heroId = Std.string(a.id);
 		heroName = a.gmHero.Name;
-		dropMissingWeapons(heroId);
 		draft = getStore().edit(heroId);
 		planDirty = true;
 		slot = -1;

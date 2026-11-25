@@ -88,7 +88,12 @@ class StorageOverlays {
 			var key = CardVisual.keyFor(raw, showDetails);
 			if (key == keys[i] && owner == owners[i]) {
 				if (views[i] != null)
-					views[i].refresh();
+					try
+						views[i].refresh()
+					catch (error:Dynamic) {
+						ErrorLog.report("Could not refresh a card overlay", error);
+						remove(i);
+					}
 				continue;
 			}
 			remove(i);
@@ -138,8 +143,12 @@ class StorageOverlays {
 	}
 
 	function remove(i:Int):Void {
+		// The card may belong to a native cell the game already destroyed (for example after selling).
 		if (views[i] != null)
-			views[i].dispose();
+			try
+				views[i].dispose()
+			catch (error:Dynamic)
+				ErrorLog.report("Could not clean up an old card overlay", error);
 		views[i] = null;
 		styles[i] = null;
 		strips[i] = null;
@@ -154,11 +163,12 @@ class StorageOverlays {
 			layer.removeEventListener(Event.ENTER_FRAME, refreshNextFrame);
 			refreshQueued = false;
 		}
-		for (drag in drags)
-			drag.dispose();
+		for (drag in drags.concat(gearDrags))
+			try
+				drag.dispose()
+			catch (error:Dynamic)
+				ErrorLog.report("Could not release an old card drag hold", error);
 		drags = [];
-		for (drag in gearDrags)
-			drag.dispose();
 		gearDrags = [];
 		cells = [];
 		for (i in 0...18)

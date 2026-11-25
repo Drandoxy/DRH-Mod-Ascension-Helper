@@ -489,6 +489,25 @@ class Checks {
 		check(messages.length > soldMessages && messages[messages.length - 1].indexOf("no longer own") >= 0,
 			"no notice that a sold weapon left the plan");
 		editor.close(false);
+		// After a sale the game destroys its own inventory cards: cleaning up an old card overlay that
+		// throws must not stop the planner from opening, and the sold weapon still leaves the plan.
+		editorStore.commit("11", editorStore.committed("11").concat([new mods.ascension_helper.Plan(2, 6, "998")]));
+		inventory.mItems[0].info = info;
+		editor.tick(state);
+		var staleView:Dynamic = null;
+		for (v in editor.storageOverlays.views)
+			if (v != null)
+				staleView = v;
+		check(staleView != null, "no card overlay to break for the stale-card check");
+		Reflect.setField(staleView, "host", null);
+		var staleMessages = messages.length;
+		editor.open();
+		check(editor.editing, "a broken old card overlay stopped the planner from opening");
+		for (i in staleMessages...messages.length)
+			check(messages[i].indexOf("Could not open") < 0, "planner reported an open failure for a stale card");
+		for (p in editorStore.committed("11"))
+			check(p.uid != "998", "sold weapon stayed in the plan when an old card failed to clean up");
+		editor.close(false);
 		var emptyInventory = new mods.ascension_helper.Store(dir + "-empty", "77");
 		emptyInventory.commit("1", [new mods.ascension_helper.Plan(0, 1, "555")]);
 		check(emptyInventory.prune("1", function(_) return false) == 1 && emptyInventory.committed("1").length == 0, "prune did not drop the missing weapon");

@@ -2,7 +2,7 @@
   "id": "ascension_helper",
   "name": "Ascension Helper",
   "description": "Plan each hero's weapons and training; equips weapons and spends training points automatically on level-up.",
-  "version": "0.1.48",
+  "version": "0.1.49",
   "author": "Drandox",
   "api": "1.5.0",
   "drh": "18",

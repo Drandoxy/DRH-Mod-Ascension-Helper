@@ -39,6 +39,11 @@ Training points spent automatically at the start of a dungeon:
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
 
+## Changes since 0.1.48
+
+- Fixed "Could not open the weapon planner: Null Object Reference" after selling an equipped, planned weapon. After a sale the game rebuilds its own inventory cards; cleaning up the overlays on the old, destroyed cards failed and stopped the planner from opening. That cleanup can no longer block it, and the sold weapon is removed from the plan first.
+- If the planner still cannot open, the message names the step that failed.
+
 ## Changes since 0.1.47
 
 - Selling (or otherwise losing) a weapon that was in a plan no longer breaks the planner. As soon as Ascension Helper sees the weapon is gone, it removes it from the saved plan and any unsaved draft, shows a short notice, and never tries to equip it.
