@@ -62,7 +62,11 @@ class Native {
 
 	public function item(uid:String):ItemInfo {
 		var f = facade();
-		return f == null || f.dbAccountInfo == null ? null : cast f.dbAccountInfo.inventoryInfo.items.itemFor(Std.parseInt(uid));
+		if (f == null || f.dbAccountInfo == null)
+			return null;
+		// A missing key gives the game's non-null "undefined" placeholder, not null: a sold weapon looked owned.
+		var raw:Dynamic = f.dbAccountInfo.inventoryInfo.items.itemFor(Std.parseInt(uid));
+		return Std.isOfType(raw, ItemInfo) ? raw : null;
 	}
 
 	public function level(a:AvatarInfo):Int {
@@ -99,12 +103,14 @@ class Native {
 			for (name in gm.AttackArray) {
 				if (name == null || name == "")
 					continue;
-				var attack:GMAttack = cast f.gameMaster.attackByConstant.itemFor(name);
+				var attackRaw:Dynamic = f.gameMaster.attackByConstant.itemFor(name);
+				var attack:GMAttack = Std.isOfType(attackRaw, GMAttack) ? attackRaw : null;
 				if (attack != null && attack.ManaCost > 0)
 					w.usesMana = true;
 			}
 			if (gm.ChargeAttack != null && gm.ChargeAttack != "") {
-				var charge:GMAttack = cast f.gameMaster.attackByConstant.itemFor(gm.ChargeAttack);
+				var chargeRaw:Dynamic = f.gameMaster.attackByConstant.itemFor(gm.ChargeAttack);
+				var charge:GMAttack = Std.isOfType(chargeRaw, GMAttack) ? chargeRaw : null;
 				if (charge != null && charge.ManaCost > 0)
 					w.usesMana = true;
 			}
@@ -189,6 +195,22 @@ class Native {
 		if (value.avatarId != 0 && value.avatarId != a.id)
 			return false;
 		return value.requiredLevel <= level(a)
+			&& facade().dbAccountInfo.inventoryInfo.canAvatarEquipThisMasterType(a, value.gmWeaponItem.MasterType);
+	}
+
+	/**
+	 * Whether this hero can ever equip the weapon for a plan at `planLevel`: not equipped on another hero,
+	 * a weapon type the class can use, and a required level within the planned level. Unknown heroes or
+	 * weapons count as fitting (owned() handles missing weapons), so a loading account removes nothing.
+	 */
+	public function fits(uid:String, heroId:String, planLevel:Int):Bool {
+		var value = item(uid);
+		var a = hero(heroId);
+		if (value == null || value.gmWeaponItem == null || a == null)
+			return true;
+		if (value.avatarId != 0 && value.avatarId != a.id)
+			return false;
+		return (cast value.requiredLevel : Int) <= planLevel
 			&& facade().dbAccountInfo.inventoryInfo.canAvatarEquipThisMasterType(a, value.gmWeaponItem.MasterType);
 	}
 

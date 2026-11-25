@@ -34,14 +34,16 @@ class ModifierIcon {
 		var key:String;
 		var prefix:String;
 		if (legendary > 0) {
-			var gm:GMLegendaryModifier = cast facade.gameMaster.legendaryModifiersById.itemFor(legendary);
+			var gmRaw:Dynamic = facade.gameMaster.legendaryModifiersById.itemFor(legendary);
+			var gm:GMLegendaryModifier = Std.isOfType(gmRaw, GMLegendaryModifier) ? gmRaw : null;
 			if (gm == null)
 				return;
 			name = gm.IconName;
 			key = gm.Constant;
 			prefix = "LEGENDARY_MODIFIER";
 		} else {
-			var gm:GMModifier = cast facade.gameMaster.modifiersByConstant.itemFor(constant);
+			var gmRaw:Dynamic = facade.gameMaster.modifiersByConstant.itemFor(constant);
+			var gm:GMModifier = Std.isOfType(gmRaw, GMModifier) ? gmRaw : null;
 			if (gm == null)
 				return;
 			name = gm.IconName;

@@ -526,6 +526,11 @@ class Checks {
 		check(shared.cleanAll(function(_) return true, function(_) return null) == 0, "clean plans were changed again");
 		check(shared.cleanAll(function(uid) return uid != "3", function(_) return null) == 1 && shared.committed("11").length == 0,
 			"sold weapon not removed from every hero");
+		// Weapons the hero can never use for that plan (another hero's, wrong type, level too high) are removed.
+		shared.commit("11", [new Plan(0, 1, "4"), new Plan(1, 1, "5"), new Plan(2, 5, "6")]);
+		var unfit = shared.cleanAll(function(_) return true, function(_) return null, function(uid, hero, level) return uid == "6" && hero == "11" && level == 5);
+		check(unfit == 2 && shared.committed("11").length == 1 && shared.committed("11")[0].uid == "6", "unusable planned weapons were not removed");
+		check(shared.cleanAll(function(_) return true, function(_) return null, function(_, _, _) return true) == 0, "usable plans were changed");
 		var guard = new mods.ascension_helper.Store(dir + "-guard", "79");
 		guard.commit("11", [new Plan(0, 1, "9001"), new Plan(1, 1, "9002"), new Plan(2, 1, "9003")]);
 		check(mods.ascension_helper.PlanHygiene.run(guard, native) == 0 && guard.committed("11").length == 3,

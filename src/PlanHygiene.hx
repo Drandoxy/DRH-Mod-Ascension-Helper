@@ -17,11 +17,12 @@ class PlanHygiene {
 			ErrorLog.report("Plan check skipped", "none of " + planned.length + " planned weapons found in the inventory");
 			return 0;
 		}
-		return store.cleanAll(function(uid) return native.owned(uid), function(uid) return native.holder(uid));
+		return store.cleanAll(function(uid) return native.owned(uid), function(uid) return native.holder(uid),
+			function(uid, hero, level) return native.fits(uid, hero, level));
 	}
 
 	public static function message(removed:Int):String {
-		return removed == 1 ? "Weapon plans updated: removed 1 entry (a weapon you no longer own, or one planned for another hero)." : "Weapon plans updated: removed "
-			+ removed + " entries (weapons you no longer own, or planned for another hero).";
+		return removed == 1 ? "Weapon plans updated: removed 1 weapon (one you no longer own, used by another hero, or not usable at that level)." : "Weapon plans updated: removed "
+			+ removed + " weapons (ones you no longer own, used by another hero, or not usable at that level).";
 	}
 }

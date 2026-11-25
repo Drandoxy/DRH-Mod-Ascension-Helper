@@ -251,8 +251,12 @@ class Main extends mods.api.Mod {
 			var key = current + ":" + slot + ":" + p.uid;
 			if (!native.eligible(a, p.uid)) {
 				levelTrigger.done(p);
-				if (blockedNotice != key) {
-					blockedNotice = key;
+				// The plan check removes weapons that can never fit; tell once per weapon, not every level.
+				nextHygiene = 0;
+				var notice = hero + ":" + slot + ":" + p.uid;
+				var removable = !native.owned(p.uid) || !native.fits(p.uid, hero, p.level);
+				if (!removable && blockedNotice != notice) {
+					blockedNotice = notice;
 					notify("Planned weapon unavailable for slot " + (slot + 1) + ". Review your saved selections.", false);
 				}
 				continue;

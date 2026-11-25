@@ -6,7 +6,7 @@ Plan each hero's weapons and training once; the mod equips the weapons and spend
 Plan each hero's weapons and training once. As the hero levels up, the mod equips the planned weapons and spends new training points by your plan, in Town or in a dungeon.
 
 - **Weapon plan:** open Storage > Loot, select an owned hero and press **ASCENSION** beside Add Storage. Pick a slot (J, K or L) and choose one weapon for each required level. Filter by type, rarity and level; **Auto Select** fills the slot from the filtered list, preferring rarity, mana and estimated combat value. **None** clears the slot's plan. **Save** keeps it, **Cancel** discards your changes, and switching hero or closing Storage saves too.
-- **Automatic equipment:** after a confirmed level-up, the latest planned weapon at or below the hero's level is equipped with the game's normal equip request, one at a time. Manual changes at the same level are kept, missing weapons are reported, and nothing is equipped until a plan exists.
+- **Automatic equipment:** after a confirmed level-up, the latest planned weapon at or below the hero's level is equipped with the game's normal equip request, one at a time. Manual changes at the same level are kept, and nothing is equipped until a plan exists. Weapons that can no longer be used (sold, equipped on another hero, the wrong type for the class, or above the planned level) are removed from the plan with a short notice.
 - **Training plan:** open Training and press **ASCENSION**. Each stat row gets **-1 +1 -10 +10**: the plan is an ordered list of up to 300 points (75 per stat). Adding goes to the end of the list; removing takes that stat's last points, so the order is kept. **RESET** empties the plan, **SAVE** keeps it, **CANCEL** discards it, and switching hero saves.
 - **Automatic training:** whenever a hero has unspent training points, they are spent in plan order with the game's own training request, even in a dungeon right after a level-up. Points you already spent count toward the plan, and stats are never lowered. A message such as "3 skill points added to Melee Power" confirms each spend; if a loading screen hides it, it is shown again after loading.
 - **Inventory extras:** modifier icons show their star level, the selected slot is marked in cyan, and the planner works with a controller (D-pad to move, A to press or toggle a weapon).
@@ -38,6 +38,13 @@ Training points spent automatically at the start of a dungeon:
 - Equipment and training requests can be sent during a dungeon. The account is updated at once; whether the current run uses the change right away is decided by the game server.
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
+
+## Changes since 0.1.53
+
+- Sold weapons now really leave the plan. For a weapon that is gone, the game's inventory lookup returns a placeholder instead of nothing, so it still looked owned: it stayed in the plan, and "Planned weapon unavailable for slot 1" came back at every level-up. Missing weapons are now recognised and removed from every hero's plan.
+- Weapons a hero can never use for a plan are removed too: one equipped on another hero, a weapon type the class cannot use, or a required level above the planned level.
+- If a planned weapon still cannot be equipped, the notice is shown once per weapon instead of at every level.
+- The same lookup is made safe for modifier icons and the mana check in Auto Select.
 
 ## Changes since 0.1.52
 

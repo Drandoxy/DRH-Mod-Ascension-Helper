@@ -145,9 +145,12 @@ class Store {
 	 * - weapons no longer owned (sold, salvaged, traded) are removed;
 	 * - a weapon can be planned for one hero only. When two heroes plan it, the hero currently holding it
 	 *   (`holder`) keeps it, otherwise the hero that planned it first; it is removed from the others.
+	 * - a weapon the hero can never use for that plan (`fits` false: equipped on another hero, wrong
+	 *   weapon type for the class, or a required level above the planned level) is removed.
 	 * Returns how many plan entries were removed. Saves once, only when something changed.
 	 */
-	public function cleanAll(owned:String->Bool, holder:String->String):Int {
+	public function cleanAll(owned:String->Bool, holder:String->String, ?fits:String->String->Int->Bool):Int {
+		var usable = function(p:Plan, id:String) return fits == null || fits(p.uid, id, p.level);
 		var before = [for (r in records) {plans: r.plans, draft: r.draft}];
 		var removed = 0;
 		var keeper = new Map<String, String>();
@@ -178,12 +181,12 @@ class Store {
 		for (r in records) {
 			var id = Std.string(r.id);
 			var plans:Array<Plan> = r.plans;
-			var keptPlans = [for (p in plans) if (owned(p.uid) && keeper.get(p.uid) == id) p];
+			var keptPlans = [for (p in plans) if (owned(p.uid) && keeper.get(p.uid) == id && usable(p, id)) p];
 			removed += plans.length - keptPlans.length;
 			r.plans = keptPlans;
 			var draft:Array<Plan> = r.draft;
 			if (draft != null) {
-				var keptDraft = [for (p in draft) if (owned(p.uid) && keeper.get(p.uid) == id) p];
+				var keptDraft = [for (p in draft) if (owned(p.uid) && keeper.get(p.uid) == id && usable(p, id)) p];
 				removed += draft.length - keptDraft.length;
 				r.draft = keptDraft;
 			}
