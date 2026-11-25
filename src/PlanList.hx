@@ -141,6 +141,18 @@ class PlanList {
 		render();
 	}
 
+	/** One saved plan row; null when it cannot be drawn, so the rest of the list still shows. */
+	function makeRow(p:Plan, width:Float):PlanRow {
+		var row:PlanRow = null;
+		try {
+			row = new PlanRow(ui, native, rows, p, width, rowHeight, remove);
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not draw saved plan row for weapon " + p.uid, error);
+			row = null;
+		}
+		return row;
+	}
+
 	function clear():Void {
 		for (row in cache) {
 			row.dispose();
@@ -178,12 +190,9 @@ class PlanList {
 					break;
 				}
 			if (found == null) {
-				try
-					found = new PlanRow(ui, native, rows, p, width, rowHeight, remove)
-				catch (error:Dynamic) {
-					ErrorLog.report("Could not draw saved plan row for weapon " + p.uid, error);
+				found = makeRow(p, width);
+				if (found == null)
 					continue;
-				}
 				cache.push(found);
 				rowsCreated++;
 			}

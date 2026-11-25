@@ -126,6 +126,14 @@ STUBS["uI/modifiers/UIModifierTooltip.hx"]="package uI.modifiers; class UIModifi
 
 STUBS["brain/render/MovieClipRenderController.hx"]="package brain.render; class MovieClipRenderController {public static var plays=0;public function new(f:facade.DBFacade,c:openfl.display.MovieClip){}public function play(f:UInt=0,l:Bool=false){plays++;}public function destroy(){}}"
 STUBS["openfl/display/MovieClip.hx"]=STUBS["openfl/display/MovieClip.hx"].replace("public function stop(){}","public function stop(){}public function gotoAndStop(f:Int){}")
+# The game's bytecode loader can only link classes compiled into the game. These were refused in game
+# (the module is then left interpreted and the mod fails with "Unknown identifier: Hub").
+UNLINKABLE = ["haxe.CallStack", "System.totalMemory", "new openfl.Vector"]
+for path in (root / "src").glob("*.hx"):
+    text = path.read_text(encoding="utf-8")
+    for name in UNLINKABLE:
+        if name in text:
+            raise SystemExit(f"{path.name}: uses {name}, which the game's bytecode loader cannot link")
 with tempfile.TemporaryDirectory(prefix="ascension-checks-") as temp:
     target = Path(temp)
     module = target / "mods/ascension_helper"

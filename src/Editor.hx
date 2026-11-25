@@ -898,21 +898,7 @@ class Editor {
 		noneButton.enabled = true;
 		openStep = "weapon list: cards";
 		for (i in 0...15)
-			try
-				renderCell(i)
-			catch (error:Dynamic) {
-				// One bad card must not stop the planner: hide it and report which weapon it was.
-				var index = page * 15 + i;
-				ErrorLog.report("Could not draw planner card for weapon " + (index < visible.length ? visible[index].uid : "-"), error);
-				try {
-					cells[i].root.visible = false;
-					if (cardViews[i] != null)
-						cardViews[i].dispose();
-				} catch (_:Dynamic) {}
-				cardViews[i] = null;
-				stars[i] = null;
-				tileModifiers[i] = null;
-			}
+			drawCell(i);
 		openStep = "weapon list: page";
 		if (pageLabel != null) {
 			pageLabel.text = "PAGE " + (page + 1) + " / " + Std.int(Math.max(1, Math.ceil(visible.length / 15)));
@@ -920,6 +906,38 @@ class Editor {
 			pageLabel.height = pageLabel.textHeight + 4;
 			pageLabel.x = pageCenter - pageLabel.width / 2;
 			pageLabel.y = pageMiddle - pageLabel.height / 2;
+		}
+	}
+
+	/** One planner card. A card that cannot be drawn is hidden and reported; the planner keeps working. */
+	function drawCell(i:Int):Void {
+		var failure:Dynamic = null;
+		try {
+			renderCell(i);
+		} catch (error:Dynamic) {
+			failure = error;
+		}
+		if (failure == null)
+			return;
+		var index = page * 15 + i;
+		var uid = index < visible.length ? visible[index].uid : "-";
+		ErrorLog.report("Could not draw planner card for weapon " + uid, failure);
+		hideCell(i);
+	}
+
+	function hideCell(i:Int):Void {
+		var failed = cells[i];
+		var failedView = cardViews[i];
+		cardViews[i] = null;
+		stars[i] = null;
+		tileModifiers[i] = null;
+		try {
+			var failedRoot = failed.root;
+			failedRoot.visible = false;
+			if (failedView != null)
+				failedView.dispose();
+		} catch (cleanupError:Dynamic) {
+			ErrorLog.report("Could not hide a failed planner card", cleanupError);
 		}
 	}
 
