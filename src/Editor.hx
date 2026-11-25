@@ -874,7 +874,7 @@ class Editor {
 			try
 				planList.update(draft, slot)
 			catch (error:Dynamic)
-				ErrorLog.report("Could not draw the saved plan list", error);
+				ErrorLog.report("Could not draw the saved plan list (" + planList.step + ")", error);
 			planDirty = false;
 		}
 		openStep = "weapon list: slots";

@@ -36,6 +36,9 @@ class PlanList {
 	var header:Sprite;
 	var headerLabel:TextField;
 
+	/** Which part of drawing runs now; named in the log if drawing fails. */
+	public var step(default, null) = "";
+
 	public function new(ui:NativeUI, native:Native, parent:Sprite, bounds:Rectangle, remove:(String, Int, Int) -> Void) {
 		this.ui = ui;
 		this.native = native;
@@ -132,13 +135,57 @@ class PlanList {
 	}
 
 	public function update(values:Array<Plan>, selectedSlot:Int):Void {
+		step = "filter plans";
 		if (slot != selectedSlot)
 			offset = 0;
 		slot = selectedSlot;
 		plans = [for (p in values) if (slot < 0 || p.slot == slot) p.copy()];
+		step = "sort plans";
 		plans.sort(function(a, b) return a.level == b.level ? a.slot - b.slot : a.level - b.level);
 		offset = Math.max(0, Math.min(offset, maximum()));
 		render();
+	}
+
+	/** Places one plan entry. A failing entry is reported with its weapon id and sub-step and skipped. */
+	function placeRow(i:Int, width:Float):Void {
+		var p = plans[i];
+		var part = "row key";
+		try {
+			var item = native.item(p.uid);
+			var key = PlanRow.signature(p, item);
+			part = "row cache";
+			var found:PlanRow = null;
+			for (row in cache)
+				if (row.key == key) {
+					found = row;
+					break;
+				}
+			if (found == null) {
+				part = "row create";
+				found = makeRow(p, width);
+				if (found != null) {
+					cache.push(found);
+					rowsCreated++;
+				}
+			}
+			if (found != null) {
+				part = "row place";
+				found.used = true;
+				var shown = found.root;
+				shown.y = i * rowHeight;
+				deleteButtons.push(found.deletion);
+			}
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not place saved plan row for weapon " + p.uid + " (" + part + ")", error);
+		}
+	}
+
+	function disposeRow(row:PlanRow):Void {
+		try {
+			row.dispose();
+		} catch (error:Dynamic) {
+			ErrorLog.report("Could not remove an old saved plan row", error);
+		}
 	}
 
 	/** One saved plan row; null when it cannot be drawn, so the rest of the list still shows. */
@@ -172,6 +219,7 @@ class PlanList {
 		}
 		var width = bounds.width - 40;
 		var height = bounds.height - 66;
+		step = "header";
 		headerLabel.text = slot < 0 ? "SAVED WEAPON PLAN" : "SLOT " + (slot + 1) + " WEAPON PLAN";
 		headerLabel.width = headerLabel.textWidth + 8;
 		headerLabel.x = bounds.x + (bounds.width - headerLabel.width) / 2;
@@ -180,33 +228,18 @@ class PlanList {
 		var first = Std.int(Math.max(0, Std.int(offset / rowHeight) - 1));
 		var count = Std.int(Math.ceil(height / rowHeight)) + 3;
 		deleteButtons = [];
-		for (i in first...Std.int(Math.min(plans.length, first + count))) {
-			var p = plans[i];
-			var key = PlanRow.signature(p, native.item(p.uid));
-			var found:PlanRow = null;
-			for (row in cache)
-				if (row.key == key) {
-					found = row;
-					break;
-				}
-			if (found == null) {
-				found = makeRow(p, width);
-				if (found == null)
-					continue;
-				cache.push(found);
-				rowsCreated++;
-			}
-			found.used = true;
-			found.root.y = i * rowHeight;
-			deleteButtons.push(found.deletion);
-		}
+		for (i in first...Std.int(Math.min(plans.length, first + count)))
+			placeRow(i, width);
+		step = "remove old rows";
 		for (row in cache.copy())
 			if (!row.used) {
-				row.dispose();
 				cache.remove(row);
 				rowsDisposed++;
+				disposeRow(row);
 			}
+		step = "scroll";
 		rows.y = -offset;
+		step = "scroll bar";
 		var max = maximum();
 		thumb.visible = max > 0;
 		thumb.graphics.clear();
@@ -216,6 +249,7 @@ class PlanList {
 		thumb.graphics.drawRoundRect(-3.5, 0, 12, thumbHeight, 12, 12);
 		thumb.graphics.endFill();
 		thumb.y = max <= 0 ? 0 : offset / max * (height - thumbHeight);
+		step = "done";
 	}
 
 	public function dispose():Void {
