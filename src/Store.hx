@@ -109,6 +109,99 @@ class Store {
 		}
 	}
 
+	/** Every distinct weapon id in any hero's saved plan or draft. */
+	public function plannedUids():Array<String> {
+		var result:Array<String> = [];
+		for (r in records)
+			for (list in [(r.plans : Array<Plan>), (r.draft : Array<Plan>)])
+				if (list != null)
+					for (p in list)
+						if (result.indexOf(p.uid) < 0)
+							result.push(p.uid);
+		return result;
+	}
+
+	/** The hero (other than `except`) whose saved plan or open draft holds this weapon, or null. */
+	public function reservedBy(uid:String, except:String):String {
+		for (r in records) {
+			var id = Std.string(r.id);
+			if (id == except)
+				continue;
+			var plans:Array<Plan> = r.plans;
+			for (p in plans)
+				if (p.uid == uid)
+					return id;
+			var draft:Array<Plan> = r.draft;
+			if (draft != null)
+				for (p in draft)
+					if (p.uid == uid)
+						return id;
+		}
+		return null;
+	}
+
+	/**
+	 * Keeps every hero's saved plan and draft consistent with the account:
+	 * - weapons no longer owned (sold, salvaged, traded) are removed;
+	 * - a weapon can be planned for one hero only. When two heroes plan it, the hero currently holding it
+	 *   (`holder`) keeps it, otherwise the hero that planned it first; it is removed from the others.
+	 * Returns how many plan entries were removed. Saves once, only when something changed.
+	 */
+	public function cleanAll(owned:String->Bool, holder:String->String):Int {
+		var before = [for (r in records) {plans: r.plans, draft: r.draft}];
+		var removed = 0;
+		var keeper = new Map<String, String>();
+		// First pass: who keeps each weapon.
+		for (r in records) {
+			var id = Std.string(r.id);
+			for (list in [(r.plans : Array<Plan>), (r.draft : Array<Plan>)])
+				if (list != null)
+					for (p in list) {
+						if (!owned(p.uid))
+							continue;
+						var held = holder(p.uid);
+						if (held != null && held == id)
+							keeper.set(p.uid, id);
+						else if (!keeper.exists(p.uid))
+							keeper.set(p.uid, id);
+					}
+		}
+		// A holder that planned it wins over an earlier planner.
+		for (r in records) {
+			var id = Std.string(r.id);
+			for (list in [(r.plans : Array<Plan>), (r.draft : Array<Plan>)])
+				if (list != null)
+					for (p in list)
+						if (owned(p.uid) && holder(p.uid) == id)
+							keeper.set(p.uid, id);
+		}
+		for (r in records) {
+			var id = Std.string(r.id);
+			var plans:Array<Plan> = r.plans;
+			var keptPlans = [for (p in plans) if (owned(p.uid) && keeper.get(p.uid) == id) p];
+			removed += plans.length - keptPlans.length;
+			r.plans = keptPlans;
+			var draft:Array<Plan> = r.draft;
+			if (draft != null) {
+				var keptDraft = [for (p in draft) if (owned(p.uid) && keeper.get(p.uid) == id) p];
+				removed += draft.length - keptDraft.length;
+				r.draft = keptDraft;
+			}
+		}
+		if (removed == 0)
+			return 0;
+		try
+			save()
+		catch (e:Dynamic) {
+			for (i in 0...records.length) {
+				records[i].plans = before[i].plans;
+				records[i].draft = before[i].draft;
+			}
+			throw e;
+		}
+		return removed;
+	}
+
 	/**
 	 * Drops plans whose weapon is no longer owned (sold, salvaged or traded), from the saved plan and
 	 * from an unsaved draft. Returns how many plans were removed. Saved only when something changed.

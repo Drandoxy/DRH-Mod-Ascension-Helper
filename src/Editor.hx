@@ -245,25 +245,25 @@ class Editor {
 			notify("Select an owned hero first.", false);
 			return;
 		}
-		var step = "plan cleanup";
+		openStep = "plan cleanup";
 		try {
 			// First, before touching any native card: a sold weapon leaves the plan.
 			dropMissingWeapons(Std.string(a.id));
 			editing = true;
-			step = "storage overlays";
+			openStep = "storage overlays";
 			storageOverlays.update(false);
 			entry.visible = false;
-			step = "hero";
+			openStep = "hero";
 			beginHero(a);
-			step = "layout";
+			openStep = "layout";
 			build();
 			maintain();
-			step = "weapon list";
+			openStep = "weapon list";
 			rebuild();
-			step = "slot";
+			openStep = "slot";
 			selectSlot(initialSlot());
 			dirty = false;
-			step = "controller";
+			openStep = "controller";
 			linkController();
 			if (slot < slotButtons.length)
 				ui.focus(slotButtons[slot]);
@@ -271,19 +271,22 @@ class Editor {
 			editing = false;
 			cleanup();
 			// Shown instead of silently doing nothing when the planner cannot open; the step helps a report.
-			ErrorLog.report("Could not open the weapon planner (" + step + ")", error);
-			notify("Could not open the weapon planner (" + step + "): " + Std.string(error), false);
+			ErrorLog.report("Could not open the weapon planner (" + openStep + ")", error);
+			notify("Could not open the weapon planner (" + openStep + "): " + Std.string(error), false);
 		}
 	}
 
-	/** Sold or otherwise gone weapons leave the plan, so the planner and auto-equip never use them. */
+	/** Which part of opening runs now; named in the error message if opening fails. */
+	var openStep = "";
+
+	/**
+	 * Before opening: every hero's plan is checked against the account. Sold weapons leave all plans,
+	 * and a weapon planned for two heroes stays with one only (see Store.cleanAll).
+	 */
 	function dropMissingWeapons(hero:String):Void {
-		if (!native.inventoryReady())
-			return;
-		var removed = getStore().prune(hero, function(uid) return native.owned(uid));
+		var removed = PlanHygiene.run(getStore(), native);
 		if (removed > 0)
-			notify(removed == 1 ? "Removed 1 weapon you no longer own from the plan." : "Removed " + removed
-				+ " weapons you no longer own from the plan.", true);
+			notify(PlanHygiene.message(removed), true);
 	}
 
 	function initialSlot():Int {
@@ -808,8 +811,11 @@ class Editor {
 	}
 
 	function rebuild():Void {
+		openStep = "weapon list: hero";
 		var a = native.hero(heroId);
+		openStep = "weapon list: inventory";
 		all = native.list(a);
+		openStep = "weapon list: filters";
 		planDirty = true;
 		var previous = types.length > typeIndex ? types[typeIndex] : "";
 		types = [""];
@@ -824,7 +830,8 @@ class Editor {
 		for (p in draft)
 			if (p.uid == uid && p.slot != slot)
 				return true;
-		return false;
+		// A weapon in another hero's plan cannot be planned here too: two heroes cannot equip it at once.
+		return getStore() != null && getStore().reservedBy(uid, heroId) != null;
 	}
 
 	function filter():Void {
@@ -863,9 +870,14 @@ class Editor {
 		if (!editing || cells.length != 15)
 			return;
 		if (planList != null && planDirty) {
-			planList.update(draft, slot);
+			openStep = "weapon list: saved plan";
+			try
+				planList.update(draft, slot)
+			catch (error:Dynamic)
+				ErrorLog.report("Could not draw the saved plan list", error);
 			planDirty = false;
 		}
+		openStep = "weapon list: slots";
 		for (i in 0...slotHits.length) {
 			var total = 0;
 			for (p in draft)
@@ -884,7 +896,35 @@ class Editor {
 		}
 		autoButton.enabled = true;
 		noneButton.enabled = true;
-		for (i in 0...15) {
+		openStep = "weapon list: cards";
+		for (i in 0...15)
+			try
+				renderCell(i)
+			catch (error:Dynamic) {
+				// One bad card must not stop the planner: hide it and report which weapon it was.
+				var index = page * 15 + i;
+				ErrorLog.report("Could not draw planner card for weapon " + (index < visible.length ? visible[index].uid : "-"), error);
+				try {
+					cells[i].root.visible = false;
+					if (cardViews[i] != null)
+						cardViews[i].dispose();
+				} catch (_:Dynamic) {}
+				cardViews[i] = null;
+				stars[i] = null;
+				tileModifiers[i] = null;
+			}
+		openStep = "weapon list: page";
+		if (pageLabel != null) {
+			pageLabel.text = "PAGE " + (page + 1) + " / " + Std.int(Math.max(1, Math.ceil(visible.length / 15)));
+			pageLabel.width = pageLabel.textWidth + 8;
+			pageLabel.height = pageLabel.textHeight + 4;
+			pageLabel.x = pageCenter - pageLabel.width / 2;
+			pageLabel.y = pageMiddle - pageLabel.height / 2;
+		}
+	}
+
+	function renderCell(i:Int):Void {
+		{
 			var index = page * 15 + i;
 			var cell = cells[i];
 			if (index >= visible.length) {
@@ -894,7 +934,7 @@ class Editor {
 				cardViews[i] = null;
 				stars[i] = null;
 				tileModifiers[i] = null;
-				continue;
+				return;
 			}
 			var w = visible[index];
 			var info = native.item(w.uid);
@@ -930,13 +970,6 @@ class Editor {
 				stars[i] = view.badge;
 				tileModifiers[i] = view.strip;
 			}
-		}
-		if (pageLabel != null) {
-			pageLabel.text = "PAGE " + (page + 1) + " / " + Std.int(Math.max(1, Math.ceil(visible.length / 15)));
-			pageLabel.width = pageLabel.textWidth + 8;
-			pageLabel.height = pageLabel.textHeight + 4;
-			pageLabel.x = pageCenter - pageLabel.width / 2;
-			pageLabel.y = pageMiddle - pageLabel.height / 2;
 		}
 	}
 

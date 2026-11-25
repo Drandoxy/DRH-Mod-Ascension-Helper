@@ -38,6 +38,7 @@ class Main extends mods.api.Mod {
 	var faultShown = false;
 	var blockedNotice = "";
 	var auditAt = 0.0;
+	var nextHygiene = 0.0;
 	var toast:Toast;
 
 	override public function init(context:Context):Void {
@@ -170,6 +171,15 @@ class Main extends mods.api.Mod {
 				if (store != null && store.recovered)
 					notify("Recovered saved selections. Open Ascension Helper to review them.");
 			}
+			// Plans follow the account: on login, after a sale and every 2 s, whatever else is switched on.
+			if (store != null && (editor == null || !editor.editing) && now >= nextHygiene) {
+				nextHygiene = now + 2;
+				var removed = PlanHygiene.run(store, native);
+				if (removed > 0) {
+					needsReconcile = true;
+					notify(PlanHygiene.message(removed), true);
+				}
+			}
 			if (editor != null)
 				editor.tick(inventoryState);
 			// Left by joining a dungeon, the Training screen may never report closing, and it reports
@@ -206,15 +216,6 @@ class Main extends mods.api.Mod {
 		if (a == null)
 			return;
 		var hero = Std.string(a.id);
-		// A sold weapon leaves the saved plan here too, so it is never requested or reported as unavailable.
-		if (native.inventoryReady()) {
-			var removed = store.prune(hero, function(uid) return native.owned(uid));
-			if (removed > 0) {
-				needsReconcile = true;
-				notify(removed == 1 ? "Removed 1 weapon you no longer own from the plan." : "Removed " + removed
-					+ " weapons you no longer own from the plan.", true);
-			}
-		}
 		var levelPlans = levelTrigger.needsPlans(hero, cast a.mAscensionLevel, cast a.cloutLevel) ? store.committed(hero) : [];
 		levelTrigger.observe(hero, cast a.mAscensionLevel, cast a.cloutLevel, levelPlans);
 		if (levelTrigger.jobs.length == 0)

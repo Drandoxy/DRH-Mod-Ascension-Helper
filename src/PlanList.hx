@@ -178,7 +178,12 @@ class PlanList {
 					break;
 				}
 			if (found == null) {
-				found = new PlanRow(ui, native, rows, p, width, rowHeight, remove);
+				try
+					found = new PlanRow(ui, native, rows, p, width, rowHeight, remove)
+				catch (error:Dynamic) {
+					ErrorLog.report("Could not draw saved plan row for weapon " + p.uid, error);
+					continue;
+				}
 				cache.push(found);
 				rowsCreated++;
 			}

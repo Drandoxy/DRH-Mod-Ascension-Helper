@@ -49,6 +49,12 @@ class Native {
 		return false;
 	}
 
+	/** The hero currently holding (equipping) this weapon, or null when it is in shared storage. */
+	public function holder(uid:String):String {
+		var value = item(uid);
+		return value == null || value.avatarId == 0 ? null : Std.string(value.avatarId);
+	}
+
 	/** Whether this weapon is still owned. Only meaningful while inventoryReady() is true. */
 	public function owned(uid:String):Bool {
 		return item(uid) != null;

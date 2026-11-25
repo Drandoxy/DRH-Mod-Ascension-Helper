@@ -39,6 +39,13 @@ Training points spent automatically at the start of a dungeon:
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
 
+## Changes since 0.1.49
+
+- Saved plans always match your account. On login, every 2 seconds (also with Automatic equipment off) and right before the planner opens, every hero's plan and unsaved draft is checked: weapons you no longer own (sold, salvaged, traded) are removed, with a short notice.
+- A weapon can be planned for one hero only, since two heroes cannot equip it at the same time. When two heroes have the same weapon planned, the hero currently holding it keeps it, otherwise the hero that planned it first. The planner and Auto Select no longer offer weapons planned for another hero.
+- The planner opens even if a single weapon card or saved plan row cannot be drawn: that card is skipped and reported in the game log with its weapon id, the exact step and, where available, the call stack.
+- Safety: if none of several planned weapons can be found at all, plans are left unchanged instead of being wiped.
+
 ## Changes since 0.1.48
 
 - Fixed "Could not open the weapon planner: Null Object Reference" after selling an equipped, planned weapon. After a sale the game rebuilds its own inventory cards; cleaning up the overlays on the old, destroyed cards failed and stopped the planner from opening. That cleanup can no longer block it, and the sold weapon is removed from the plan first.

@@ -14,8 +14,18 @@ class ErrorLog {
 		if (count >= 3)
 			return;
 		counts.set(where, count + 1);
-		if (write != null)
-			write(where + ": " + Std.string(error) + (count == 2 ? " (further reports of this are hidden)" : ""));
+		if (write == null)
+			return;
+		var stack = "";
+		try
+			stack = haxe.CallStack.toString(haxe.CallStack.exceptionStack())
+		catch (_:Dynamic)
+			stack = "";
+		stack = StringTools.trim(stack);
+		if (stack.length > 600)
+			stack = stack.substr(0, 600) + "...";
+		write(where + ": " + Std.string(error) + (stack == "" ? "" : " | stack: " + StringTools.replace(stack, "\n", " < "))
+			+ (count == 2 ? " (further reports of this are hidden)" : ""));
 	}
 
 	public static function reset(?log:String->Void):Void {

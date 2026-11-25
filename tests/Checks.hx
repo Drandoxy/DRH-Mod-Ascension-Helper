@@ -127,7 +127,7 @@ class Checks {
 		mods.ascension_helper.ErrorLog.reset(function(message) logged.push(message));
 		for (i in 0...5)
 			mods.ascension_helper.ErrorLog.report("Repeated failure", "boom");
-		check(logged.length == 3 && logged[0] == "Repeated failure: boom" && logged[2].indexOf("hidden") > 0,
+		check(logged.length == 3 && logged[0].indexOf("Repeated failure: boom") == 0 && logged[2].indexOf("hidden") > 0,
 			"error reports are not limited to three per place");
 		var brokenDir = dir + "-broken";
 		sys.FileSystem.createDirectory(brokenDir);
@@ -508,6 +508,47 @@ class Checks {
 		for (p in editorStore.committed("11"))
 			check(p.uid != "998", "sold weapon stayed in the plan when an old card failed to clean up");
 		editor.close(false);
+		// One hero per weapon: weapon 1 is planned for heroes 11 and 12. Hero 12 holds it (avatarId), so 12 keeps it.
+		var shared = new mods.ascension_helper.Store(dir + "-shared", "78");
+		shared.commit("11", [new Plan(0, 1, "1"), new Plan(1, 1, "2")]);
+		shared.commit("12", [new Plan(0, 1, "1")]);
+		check(shared.reservedBy("1", "11") == "12" && shared.reservedBy("2", "11") == null, "reservation lookup across heroes wrong");
+		var heldBy12 = shared.cleanAll(function(_) return true, function(uid) return uid == "1" ? "12" : null);
+		check(heldBy12 == 1 && shared.committed("12").length == 1 && shared.committed("11").length == 1 && shared.committed("11")[0].uid == "2",
+			"weapon planned for two heroes did not stay only with the hero holding it");
+		shared.commit("11", [new Plan(0, 1, "3")]);
+		shared.commit("12", [new Plan(0, 1, "3")]);
+		check(shared.cleanAll(function(_) return true, function(_) return null) == 1 && shared.committed("11").length == 1
+			&& shared.committed("12").length == 0, "unheld weapon planned for two heroes did not stay with the first planner");
+		shared.draft("12", [new Plan(2, 4, "3")]);
+		check(shared.cleanAll(function(_) return true, function(_) return null) == 1 && shared.edit("12").length == 0,
+			"another hero's draft kept a weapon already planned elsewhere");
+		check(shared.cleanAll(function(_) return true, function(_) return null) == 0, "clean plans were changed again");
+		check(shared.cleanAll(function(uid) return uid != "3", function(_) return null) == 1 && shared.committed("11").length == 0,
+			"sold weapon not removed from every hero");
+		var guard = new mods.ascension_helper.Store(dir + "-guard", "79");
+		guard.commit("11", [new Plan(0, 1, "9001"), new Plan(1, 1, "9002"), new Plan(2, 1, "9003")]);
+		check(mods.ascension_helper.PlanHygiene.run(guard, native) == 0 && guard.committed("11").length == 3,
+			"plans wiped although none of the planned weapons could be looked up");
+		for (name in sys.FileSystem.readDirectory(dir + "-guard"))
+			sys.FileSystem.deleteFile(dir + "-guard/" + name);
+		sys.FileSystem.deleteDirectory(dir + "-guard");
+		for (name in sys.FileSystem.readDirectory(dir + "-shared"))
+			sys.FileSystem.deleteFile(dir + "-shared/" + name);
+		sys.FileSystem.deleteDirectory(dir + "-shared");
+		// The planner hides weapons that another hero has planned.
+		var keep11 = editorStore.committed("11");
+		editorStore.commit("12", [new Plan(0, 1, "1")]);
+		editorStore.commit("11", []);
+		editor.open();
+		var listedForOther = false;
+		for (w in editor.visible)
+			if (w.uid == "1")
+				listedForOther = true;
+		check(!listedForOther, "weapon planned for another hero is offered to this hero");
+		editor.close(false);
+		editorStore.commit("12", []);
+		editorStore.commit("11", keep11);
 		var emptyInventory = new mods.ascension_helper.Store(dir + "-empty", "77");
 		emptyInventory.commit("1", [new mods.ascension_helper.Plan(0, 1, "555")]);
 		check(emptyInventory.prune("1", function(_) return false) == 1 && emptyInventory.committed("1").length == 0, "prune did not drop the missing weapon");
@@ -564,6 +605,15 @@ class Checks {
 		app.init(context);
 		app.ready(context);
 		app.frame(new openfl.events.Event());
+		// Plans follow the account even with automatic equipment off: a sold weapon leaves on the next check.
+		app.enabled.value = false;
+		app.store.commit("11", [new Plan(0, 1, "1"), new Plan(1, 1, "777")]);
+		app.next = 0;
+		app.nextHygiene = 0;
+		app.frame(new openfl.events.Event());
+		check(app.store.committed("11").length == 1 && app.store.committed("11")[0].uid == "1",
+			"sold weapon stayed in the plan while automatic equipment was off");
+		app.enabled.value = true;
 		app.store.commit("11", [new Plan(0, 1, "1")]);
 		app.reconcile(haxe.Timer.stamp());
 		check(facade.dbAccountInfo.inventoryInfo.requests.length == 0, "startup or saved-plan change triggered auto equip without level-up");
