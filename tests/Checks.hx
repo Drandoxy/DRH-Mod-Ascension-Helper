@@ -474,6 +474,28 @@ class Checks {
 		editor.toggle("1");
 		editor.close(true);
 		check(editorStore.committed("11")[0].slot == 1 && messages.length > 0, "Save did not commit selected slot");
+		// A sold weapon (uid 999, no longer in the inventory) leaves the saved plan and the draft on open.
+		var beforeSold = editorStore.committed("11").length;
+		editorStore.commit("11", editorStore.committed("11").concat([new mods.ascension_helper.Plan(2, 5, "999")]));
+		editorStore.draft("11", editorStore.committed("11"));
+		var soldMessages = messages.length;
+		editor.open();
+		check(editor.editing, "planner did not open after a planned weapon was sold");
+		for (p in editorStore.committed("11"))
+			check(p.uid != "999", "sold weapon stayed in the saved plan");
+		check(editorStore.committed("11").length == beforeSold, "pruning removed weapons that are still owned");
+		for (p in editor.draft)
+			check(p.uid != "999", "sold weapon stayed in the planner draft");
+		check(messages.length > soldMessages && messages[messages.length - 1].indexOf("no longer own") >= 0,
+			"no notice that a sold weapon left the plan");
+		editor.close(false);
+		var emptyInventory = new mods.ascension_helper.Store(dir + "-empty", "77");
+		emptyInventory.commit("1", [new mods.ascension_helper.Plan(0, 1, "555")]);
+		check(emptyInventory.prune("1", function(_) return false) == 1 && emptyInventory.committed("1").length == 0, "prune did not drop the missing weapon");
+		check(emptyInventory.prune("1", function(_) return false) == 0, "prune reported removals twice");
+		for (name in sys.FileSystem.readDirectory(dir + "-empty"))
+			sys.FileSystem.deleteFile(dir + "-empty/" + name);
+		sys.FileSystem.deleteDirectory(dir + "-empty");
 		check(heroButton.tooltip == originalTooltip, "native hero tooltip was not restored");
 		check(heroButton.mIcon.mask == null && heroButton.mIcon.x == 5 && heroButton.mIcon.y == 7 && heroButton.mIcon.scaleX == 0.96,
 			"native portrait transform or mask not restored");

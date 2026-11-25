@@ -32,6 +32,28 @@ class Native {
 			|| f.dbAccountInfo == null ? null : f.dbAccountInfo.inventoryInfo.getAvatarInfoForAvatarInstanceId(cast Std.parseInt(id));
 	}
 
+	/**
+	 * Whether the account inventory is loaded enough to tell that a weapon is gone: it must hold at
+	 * least one weapon. Before that (or during loading) nothing is treated as missing.
+	 */
+	public function inventoryReady():Bool {
+		var f = facade();
+		if (f == null || f.dbAccountInfo == null || f.dbAccountInfo.inventoryInfo == null || f.dbAccountInfo.inventoryInfo.items == null)
+			return false;
+		var iter = f.dbAccountInfo.inventoryInfo.items.iterator();
+		while (iter.hasNext()) {
+			var it:ItemInfo = cast iter.next();
+			if (it != null && it.gmWeaponItem != null)
+				return true;
+		}
+		return false;
+	}
+
+	/** Whether this weapon is still owned. Only meaningful while inventoryReady() is true. */
+	public function owned(uid:String):Bool {
+		return item(uid) != null;
+	}
+
 	public function item(uid:String):ItemInfo {
 		var f = facade();
 		return f == null || f.dbAccountInfo == null ? null : cast f.dbAccountInfo.inventoryInfo.items.itemFor(Std.parseInt(uid));

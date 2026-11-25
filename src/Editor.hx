@@ -261,8 +261,20 @@ class Editor {
 		} catch (error:Dynamic) {
 			editing = false;
 			cleanup();
-			throw error;
+			// Shown instead of silently doing nothing when the planner cannot open.
+			ErrorLog.report("Could not open the weapon planner", error);
+			notify("Could not open the weapon planner: " + Std.string(error), false);
 		}
+	}
+
+	/** Sold or otherwise gone weapons leave the plan, so the planner and auto-equip never use them. */
+	function dropMissingWeapons(hero:String):Void {
+		if (!native.inventoryReady())
+			return;
+		var removed = getStore().prune(hero, function(uid) return native.owned(uid));
+		if (removed > 0)
+			notify(removed == 1 ? "Removed 1 weapon you no longer own from the plan." : "Removed " + removed
+				+ " weapons you no longer own from the plan.", true);
 	}
 
 	function initialSlot():Int {
@@ -282,6 +294,7 @@ class Editor {
 	function beginHero(a:AvatarInfo):Void {
 		heroId = Std.string(a.id);
 		heroName = a.gmHero.Name;
+		dropMissingWeapons(heroId);
 		draft = getStore().edit(heroId);
 		planDirty = true;
 		slot = -1;

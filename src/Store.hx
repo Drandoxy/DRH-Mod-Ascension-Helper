@@ -109,6 +109,31 @@ class Store {
 		}
 	}
 
+	/**
+	 * Drops plans whose weapon is no longer owned (sold, salvaged or traded), from the saved plan and
+	 * from an unsaved draft. Returns how many plans were removed. Saved only when something changed.
+	 */
+	public function prune(id:String, owned:String->Bool):Int {
+		var r = row(id);
+		var plans:Array<Plan> = r.plans;
+		var draft:Array<Plan> = r.draft;
+		var keptPlans = [for (p in plans) if (owned(p.uid)) p];
+		var keptDraft = draft == null ? null : [for (p in draft) if (owned(p.uid)) p];
+		var removed = plans.length - keptPlans.length + (draft == null ? 0 : draft.length - keptDraft.length);
+		if (removed == 0)
+			return 0;
+		r.plans = keptPlans;
+		r.draft = keptDraft;
+		try
+			save()
+		catch (e:Dynamic) {
+			r.plans = plans;
+			r.draft = draft;
+			throw e;
+		}
+		return removed;
+	}
+
 	public function cancel(id:String):Void {
 		var r = row(id);
 		var previous = r.draft;

@@ -39,6 +39,11 @@ Training points spent automatically at the start of a dungeon:
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
 
+## Changes since 0.1.47
+
+- Selling (or otherwise losing) a weapon that was in a plan no longer breaks the planner. As soon as Ascension Helper sees the weapon is gone, it removes it from the saved plan and any unsaved draft, shows a short notice, and never tries to equip it.
+- If the planner ever fails to open, a message now says why instead of nothing happening.
+
 ## Changes since 0.1.46
 
 - No longer incompatible with Weapon Modifiers in Inventory Preview: while that mod runs, Ascension Helper leaves the levels and modifier icons on inventory cards to it and keeps everything else.
