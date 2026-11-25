@@ -39,6 +39,10 @@ Training points spent automatically at the start of a dungeon:
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
 
+## Changes since 0.1.52
+
+- Controller navigation in the planner works again: rebuilding the links no longer tried to set a weapon card's highlight handler a second time, which the game refuses ("already has a selected interaction").
+
 ## Changes since 0.1.49 (0.1.50 did not load and was replaced by 0.1.51)
 
 - Saved plans always match your account. On login, every 2 seconds (also with Automatic equipment off) and right before the planner opens, every hero's plan and unsaved draft is checked: weapons you no longer own (sold, salvaged, traded) are removed, with a short notice.

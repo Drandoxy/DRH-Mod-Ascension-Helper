@@ -156,6 +156,9 @@ class Editor {
 		linkController();
 	}
 
+	/** The card look each planner cell's controller interactions are bound to (see linkController). */
+	var linkedStyles:Array<CardStyle> = [];
+
 	/** Links all visible editor controls for controller navigation; an open filter list keeps focus. */
 	function linkController():Void {
 		var targets:Array<Dynamic> = [];
@@ -183,10 +186,19 @@ class Editor {
 				if (cell == null || cell.info == null)
 					continue;
 				var view = i < cardViews.length ? cardViews[i] : null;
-				if (view != null && view.style != null) {
-					var style = view.style;
-					cell.navigationSelectedInteraction = function() style.setHover(true);
-					cell.navigationSetToUnselectedInteraction = function() style.setHover(false);
+				var style = view == null ? null : view.style;
+				// The game allows each interaction to be set once: bind only when this card's look changed,
+				// clearing the old binding first (links are rebuilt right after by Navigator.link).
+				while (linkedStyles.length <= i)
+					linkedStyles.push(null);
+				if (linkedStyles[i] != style) {
+					cell.clearNavigationAndInteractions();
+					if (style != null) {
+						var bound = style;
+						cell.navigationSelectedInteraction = function() bound.setHover(true);
+						cell.navigationSetToUnselectedInteraction = function() bound.setHover(false);
+					}
+					linkedStyles[i] = style;
 				}
 				targets.push(cell);
 			}
@@ -1110,6 +1122,7 @@ class Editor {
 			cell.destroy();
 		}
 		cells = [];
+		linkedStyles = [];
 		stars = [];
 		for (button in controls)
 			button.destroy();

@@ -549,6 +549,18 @@ class Checks {
 		editor.close(false);
 		editorStore.commit("12", []);
 		editorStore.commit("11", keep11);
+		// Controller links are rebuilt often: re-linking must not set a card's selected interaction twice.
+		var linkLogs:Array<String> = [];
+		mods.ascension_helper.ErrorLog.reset(function(m) linkLogs.push(m));
+		editor.open();
+		for (k in 0...4)
+			editor.linkController();
+		editor.render();
+		editor.linkController();
+		check(linkLogs.filter(function(m) return m.indexOf("Could not link") >= 0).length == 0,
+			"controller re-linking failed: " + linkLogs.join(" | "));
+		editor.close(false);
+		mods.ascension_helper.ErrorLog.reset();
 		var emptyInventory = new mods.ascension_helper.Store(dir + "-empty", "77");
 		emptyInventory.commit("1", [new mods.ascension_helper.Plan(0, 1, "555")]);
 		check(emptyInventory.prune("1", function(_) return false) == 1 && emptyInventory.committed("1").length == 0, "prune did not drop the missing weapon");
