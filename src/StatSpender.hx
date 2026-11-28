@@ -23,9 +23,6 @@ class StatSpender {
 	var pendingWanted = "";
 	var pendingLines:Array<String> = [];
 	var pendingSince = 0.0;
-	// Last state logged per hero (plain arrays, not Map), so the log shows each change once.
-	var seenIds:Array<String> = [];
-	var seenStates:Array<String> = [];
 
 	public function new(native:Native, notify:(String, Bool) -> Void, ?log:String->Void) {
 		this.native = native;
@@ -64,17 +61,6 @@ class StatSpender {
 				continue;
 			var current = stats(a);
 			var wanted = StatPlan.target(plan, current, Std.int(a.skillPointsEarned));
-			var state = "earned " + Std.int(a.skillPointsEarned) + ", stats " + current.join(",") + ", plan " + plan.length + ", next " + wanted.join(",");
-			var at = seenIds.indexOf(id);
-			if (at < 0) {
-				seenIds.push(id);
-				seenStates.push("");
-				at = seenIds.length - 1;
-			}
-			if (seenStates[at] != state) {
-				seenStates[at] = state;
-				log("training check hero " + id + ": " + state);
-			}
 			if (wanted.join(",") == current.join(","))
 				continue;
 			var key = id + ":" + wanted.join(",");

@@ -34,7 +34,7 @@ Training points spent automatically at the start of a dungeon:
 
 ## Notes
 
-- Requires DRH 18 and API 1.5 (`extends`). Restart the game after installing.
+- Requires DRH 18 or 19 and API 1.5 (`extends`). Restart the game after installing.
 - Equipment and training requests can be sent during a dungeon. The account is updated at once; whether the current run uses the change right away is decided by the game server.
 - Auto Select scores are a selection aid, not measured DPS. Manual choices always win.
 - The mod never sells items, opens chests, buys storage, moves weapons off another hero or lowers stats.
