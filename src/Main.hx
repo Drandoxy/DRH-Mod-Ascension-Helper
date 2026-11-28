@@ -237,15 +237,20 @@ class Main extends mods.api.Mod {
 			if (p == null)
 				continue;
 			var saved = Plan.desired(plans, slot, cast a.cloutLevel);
-			if (saved == null || saved.uid != p.uid || native.equipped(p.uid, hero, slot)) {
+			if (saved == null || saved.uid != p.uid) {
 				levelTrigger.done(p);
+				continue;
+			}
+			if (native.equipped(p.uid, hero, slot)) {
+				levelTrigger.handle(p);
 				continue;
 			}
 			var equippedLevel = native.equippedLevel(hero, slot);
 			// Old equipment may remain briefly while the server publishes an ascension reset.
-			// Only equipment valid at the confirmed new level can suppress a lower planned weapon.
-			if (equippedLevel > p.level && equippedLevel <= a.cloutLevel) {
-				levelTrigger.done(p);
+			// Only equipment valid at the confirmed new level can suppress the planned weapon. A worn weapon at
+			// least as high as the planned one is the player's choice and stays.
+			if (equippedLevel >= p.level && equippedLevel <= a.cloutLevel) {
+				levelTrigger.handle(p);
 				continue;
 			}
 			var key = current + ":" + slot + ":" + p.uid;
@@ -275,7 +280,10 @@ class Main extends mods.api.Mod {
 						return;
 					var confirmed = native.equipped(requestedUid, requestedHero, requestedSlot);
 					gate.finish(key, confirmed);
-					levelTrigger.done(p);
+					if (confirmed)
+						levelTrigger.handle(p);
+					else
+						levelTrigger.done(p);
 					needsReconcile = true;
 					quietUntil = clock() + 0.5;
 					if (confirmed)

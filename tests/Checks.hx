@@ -789,6 +789,17 @@ class Checks {
   check(trigger.jobs.length == 0 && trigger.needsPlans("11",2,1),"split ascension/reset update lost level-one work");
   trigger.observe("11",2,1,levels);
   check(trigger.jobs.length == 1 && trigger.jobs[0].level == 1,"split reset chose higher-level saved weapon");
+  var steps = [new Plan(0, 90, "7")];
+  var stepTrigger = new mods.ascension_helper.LevelTrigger();
+  stepTrigger.observe("33", 0, 89, steps);
+  stepTrigger.observe("33", 0, 90, steps);
+  check(stepTrigger.jobs.length == 1, "new plan step did not queue its weapon");
+  stepTrigger.handle(stepTrigger.jobs[0]);
+  stepTrigger.observe("33", 0, 101, steps);
+  check(stepTrigger.jobs.length == 0, "level-up inside the same plan step re-equipped the planned weapon");
+  stepTrigger.observe("33", 1, 1, steps);
+  stepTrigger.observe("33", 1, 90, steps);
+  check(stepTrigger.jobs.length == 1, "after an ascension the plan step was not applied again");
   trigger.observe("22",4,1,levels);
   check(trigger.jobs.length == 0,"switching to another ascended hero queued startup equipment");
   var protectedItem = new account.ItemInfo(999);
